@@ -38,6 +38,11 @@ If you want to print your own Elite Dangerous custom Joystick you need to print 
 
 Everything can be printed without supports assuming you orient the parts correctly in your slicer.
 
+Additionally you need some metric screws or close equivalents:
+
+- 28x countersunk 2.9x9.5 screws
+- 4x regular 2.9x9.5 screws (can also be countersunk)
+
 ## License
 
 The source code in the satRod project is published under the MIT License, see [LICENSE](https://github.com/targodan/satRod/blob/master/LICENSE) for details.
