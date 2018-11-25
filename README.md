@@ -30,6 +30,12 @@ You'll need...
 - Optionally you can use a PCF8574 based IO expander if you want lots of buttons.
 - As many buttons/switches/analog sticks/rotary encoders/etc. that you need.
 
+In your Arduino IDE you need to have the following libraries installed.
+
+- [The Arduino Joystick Library by MHeironimus](https://github.com/MHeironimus/ArduinoJoystickLibrary)
+- Encoder by Paul Stoffregen (Available through the Library Manager)
+- IoAbstraction by davetcc (Available through the Library Manager)
+
 ## Supported Inputs
 
 - Up to 32 Buttons or Switches in a down- or a change-mode (in change mode a short pulse will be sent whenever the state changes)
