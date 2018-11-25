@@ -1,3 +1,27 @@
+/*
+MIT License
+
+Copyright (c) 2018 Luca Corbatto
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 #include <Encoder.h>
 
 #include <IoAbstraction.h>
@@ -14,17 +38,29 @@
 #define DOWN 1
 #define UP 0
 
-IoAbstractionRef ioExpander = ioFrom8574(0x20);
 IoAbstractionRef ioLocal = ioUsingArduino();
-
-IoAbstractionRef deactivateIO = ioLocal;
-byte deactivatePin = 12;
-
-const int xAxisPin = 0;
-const int yAxisPin = 1;
 
 const byte encoderResetCountdown = 5;
 const byte buttonResetCountdown = 20;
+
+typedef enum {
+  X,
+  Y,
+  Z,
+  RX,
+  RY,
+  RZ,
+  RUDDER,
+  THROTTLE,
+  ACCELERATOR,
+  BRAKE,
+  STEERING
+} AxisType;
+
+typedef struct {
+  byte pin;
+  AxisType type;
+} Axis;
 
 typedef struct {
   IoAbstractionRef io;
@@ -45,158 +81,11 @@ typedef struct {
   Encoder encoder;
 } JoyEncoder;
 
-JoyButton joyButtons[] = {
-  {
-    ioExpander,
-    0, // pin
-    9, // buttonID
-    PIN_MODE_PULL_DOWN,
-    BUTTON_MODE_ON_PRESS,
-    0,
-    UP
-  },
-  {
-    ioExpander,
-    1, // pin
-    10, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_PRESS,
-    0,
-    UP
-  },
-  {
-    ioExpander,
-    2, // pin
-    11, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_CHANGE,
-    0,
-    UP
-  },
-  {
-    ioExpander,
-    3, // pin
-    12, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_CHANGE,
-    0,
-    UP
-  },
-  {
-    ioExpander,
-    4, // pin
-    13, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_CHANGE,
-    0,
-    UP
-  },
-  {
-    ioExpander,
-    5, // pin
-    14, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_CHANGE,
-    0,
-    UP
-  },
-  {
-    ioExpander,
-    6, // pin
-    15, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_CHANGE,
-    0,
-    UP
-  },
-  {
-    ioExpander,
-    7, // pin
-    16, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_CHANGE,
-    0,
-    UP
-  },
-  {
-    ioLocal,
-    6, // pin
-    2, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_CHANGE,
-    0,
-    UP
-  },
-  {
-    ioLocal,
-    10, // pin
-    1, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_PRESS,
-    0,
-    UP
-  },
-  {
-    ioLocal,
-    8, // pin
-    0, // buttonID
-    PIN_MODE_PULL_UP,
-    BUTTON_MODE_ON_PRESS,
-    0,
-    UP
-  }
-};
+#include "config.h"
 
+const int numAxis = sizeof(axis)/sizeof(Axis);
 const int numJoyButtons = sizeof(joyButtons)/sizeof(JoyButton);
-
-JoyEncoder joyEncoders[] = {
-  {
-    0, // pinLeft
-    4, // pinRight
-    3, // buttonLeft
-    4, // buttonRight
-    0,
-    {0, 4} // Encoder
-  },
-  {
-    1, // pinLeft
-    5, // pinRight
-    5, // buttonLeft
-    6, // buttonRight
-    0,
-    {1, 5} // Encoder
-  },
-  {
-    7, // pinLeft
-    9, // pinRight
-    7, // buttonLeft
-    8, // buttonRight
-    0,
-    {7, 9} // Encoder
-  }
-};
-
 const int numJoyEncoders = sizeof(joyEncoders)/sizeof(JoyEncoder);
-
-
-// Create the Joystick
-Joystick_ Joystick(
-    JOYSTICK_DEFAULT_REPORT_ID, // ID
-    JOYSTICK_TYPE_JOYSTICK, // Type
-    numJoyButtons+numJoyEncoders*2, // Button Count
-    0, // HAT Switch Count
-    true, // XAxis
-    true, // YAxis
-    false, // ZAxis
-    false, // XAxis Rotation
-    false, // YAxis Rotation
-    false, // ZAxis Rotation
-    false, // Rudder
-    false, // Throttle
-    false, // Accelerator
-    false, // Break
-    false // Steering
-);
 
 byte readJoyButton(const JoyButton& btn) {
   byte val = ioDeviceDigitalReadS(btn.io, btn.pin);
@@ -206,11 +95,39 @@ byte readJoyButton(const JoyButton& btn) {
   return val == HIGH ? DOWN : UP;
 }
 
+bool isAxisEnabled(AxisType ax) {
+  for(int i = 0; i < numAxis; ++i) {
+    if(axis[i].type == ax) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Create the Joystick
+Joystick_ Joystick(
+    JOYSTICK_DEFAULT_REPORT_ID, // ID
+    JOYSTICK_TYPE_JOYSTICK, // Type
+    numJoyButtons+numJoyEncoders*2, // Button Count
+    0, // HAT Switch Count
+    isAxisEnabled(AxisType::X), // XAxis
+    isAxisEnabled(AxisType::Y), // YAxis
+    isAxisEnabled(AxisType::Z), // ZAxis
+    isAxisEnabled(AxisType::RX), // XAxis Rotation
+    isAxisEnabled(AxisType::RY), // YAxis Rotation
+    isAxisEnabled(AxisType::RZ), // ZAxis Rotation
+    isAxisEnabled(AxisType::RUDDER), // Rudder
+    isAxisEnabled(AxisType::THROTTLE), // Throttle
+    isAxisEnabled(AxisType::ACCELERATOR), // Accelerator
+    isAxisEnabled(AxisType::BRAKE), // Brake
+    isAxisEnabled(AxisType::STEERING) // Steering
+);
+
 void setup() {
   Wire.begin(false);
-  
+
   ioDevicePinMode(deactivateIO, deactivatePin, INPUT_PULLUP);
-  
+
   for(int i = 0; i < numJoyButtons; ++i) {
     byte mode;
     if(joyButtons[i].pinMode == PIN_MODE_PULL_UP) {
@@ -224,19 +141,53 @@ void setup() {
     ioDevicePinMode(ioLocal, joyEncoders[i].pinLeft, INPUT_PULLUP);
     ioDevicePinMode(ioLocal, joyEncoders[i].pinRight, INPUT_PULLUP);
   }
-  
+
   // Initialize Joystick Library
   Joystick.begin();
 }
 
 void loop() {
   bool ignoreInput = !ioDeviceDigitalReadS(deactivateIO, deactivatePin);
-  
-  int xVal = analogRead(xAxisPin);
-  int yVal = analogRead(yAxisPin);
-  
-  Joystick.setXAxis(xVal);
-  Joystick.setYAxis(yVal);
+
+  for(int i = 0; i < numAxis; ++i) {
+    int val = analogRead(axis[i].pin);
+
+    switch(axis[i].type) {
+      case X:
+        Joystick.setXAxis(val);
+        break;
+      case Y:
+        Joystick.setYAxis(val);
+        break;
+      case Z:
+        Joystick.setZAxis(val);
+        break;
+      case RX:
+        Joystick.setRxAxis(val);
+        break;
+      case RY:
+        Joystick.setRyAxis(val);
+        break;
+      case RZ:
+        Joystick.setRzAxis(val);
+        break;
+      case RUDDER:
+        Joystick.setRudder(val);
+        break;
+      case THROTTLE:
+        Joystick.setThrottle(val);
+        break;
+      case ACCELERATOR:
+        Joystick.setAccelerator(val);
+        break;
+      case BRAKE:
+        Joystick.setBrake(val);
+        break;
+      case STEERING:
+        Joystick.setSteering(val);
+        break;
+    }
+  }
 
   for(int i = 0; i < numJoyButtons; ++i) {
     JoyButton& btn = joyButtons[i];
@@ -259,7 +210,7 @@ void loop() {
         Joystick.pressButton(btn.joystickButton);
         btn.resetCountdown = buttonResetCountdown;
       }
-      
+
       btn.lastState = val;
     }
   }
@@ -281,11 +232,11 @@ void loop() {
     if(state == 0) {
       continue;
     }
-    
+
     byte buttonID = state < 0 ? enc.joystickButtonLeft : enc.joystickButtonRight;
     Joystick.pressButton(buttonID);
     enc.resetCountdown = encoderResetCountdown;
-    
+
     enc.encoder.write(0);
   }
 
