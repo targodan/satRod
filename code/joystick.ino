@@ -81,7 +81,9 @@ typedef struct {
   Encoder encoder;
 } JoyEncoder;
 
+// ---------- CHANGE CONFIG HERE ----------
 #include "config.h"
+// ----------------------------------------
 
 const int numAxis = sizeof(axis)/sizeof(Axis);
 const int numJoyButtons = sizeof(joyButtons)/sizeof(JoyButton);

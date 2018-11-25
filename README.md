@@ -22,26 +22,33 @@ Following me is in no way a requirement to see the tutorials. Here is a list of 
 
 DTube is a fairly new platform with a few problems. Should the videos not be available try again at a later time. Should they still not be available then feel free to open an [issue](https://github.com/targodan/satRod/issues/new). I will do my best to make the videos available.
 
-## Files for 3D printing
+## Requirements
 
-If you want to print your own Elite Dangerous custom Joystick you need to print the following parts in the given number:
+You'll need...
 
-- 1x buttonsEnclosure
-- 1x buttonsPanel
-- 1x fssEnclosure
-- 1x fssPanel
-- 1x cableClamp
-- 4x joystickMount
-- 2x rotaryMount90degPartA
-- 2x rotaryMount90degPartB
-- 1x rotaryMountStraight
+- an Arduino *Leonardo*. No other type of Arduino will work at this stage.
+- Optionally you can use a PCF8574 based IO expander if you want lots of buttons.
+- As many buttons/switches/analog sticks/rotary encoders/etc. that you need.
 
-Everything can be printed without supports assuming you orient the parts correctly in your slicer.
+## Supported Inputs
 
-Additionally you need some metric screws or close equivalents:
+- Up to 32 Buttons or Switches in a down- or a change-mode (in change mode a short pulse will be sent whenever the state changes)
+- Up to 3 rotary encoders (make sure at least one data line of each encoder is connected to an interuptable pin, i. e. pins 2, 3 or 7)
+- Up to 6 analog axis (Currently limited by the amount of analog inputs of the Arduino. External ADCs are not yet supported.)
 
-- 28x countersunk 2.9x9.5 screws
-- 4x regular 2.9x9.5 screws (can also be countersunk)
+Hat switches are not yet supported.
+
+## Available Joysticks
+
+- [Elite Dangerous Joystick](https://github.com/targodan/satRod/blob/master/models/eliteJoystick/README.md)
+
+## Contributing
+
+If you want to contribute please open a pull-request onto the `develop` branch. I want the master branch to only contain released versions of this project.
+
+Contributions may include other custom joysticks with 3D models and/or a configuration file. If you find any bugs feel free to open an issue and/or open a pull-request if you have fixed a bug.
+
+I would love it if this repository became a big place for all sorts of different custom joysticks that are ready to print and assemble! :D
 
 ## License
 
